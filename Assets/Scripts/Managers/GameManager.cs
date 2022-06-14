@@ -3,333 +3,405 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using SDD.Events;
+using Random = UnityEngine.Random;
 
-public enum GameState { gameMenu, gamePlay,gameNextLevel,gamePause,gameOver,gameVictory}
+public enum GameState
+{
+    gameMenu,
+    gamePlay,
+    gameNextLevel,
+    gamePause,
+    gameOver,
+    gameVictory
+}
 
-public class GameManager : Manager<GameManager> {
+public class GameManager : Manager<GameManager>
+{
+    #region Time
 
-	#region Time
-	void SetTimeScale(float newTimeScale)
-	{
-		Time.timeScale = newTimeScale;
-	}
-	#endregion
+    void SetTimeScale(float newTimeScale)
+    {
+        Time.timeScale = newTimeScale;
+    }
 
-	#region Game State
-	private GameState m_GameState;
-	public bool IsPlaying { get { return m_GameState == GameState.gamePlay; } }
-	#endregion
+    #endregion
 
-	#region Score
-	private int m_Score;
-	public int Score {
-		get { return m_Score; }
-		set
-		{
-			m_Score = value;
-			BestScore = Mathf.Max(BestScore, value);
-		}
-	}
+    #region Game State
 
-	public int BestScore
-	{
-		get
-		{
-			return PlayerPrefs.GetInt("BEST_SCORE", 0);
-		}
-		set
-		{
-			PlayerPrefs.SetInt("BEST_SCORE", value);
-		}
-	}
+    private GameState m_GameState;
 
-	void IncrementScore(int increment)
-	{
-		SetScore(m_Score + increment);
-	}
+    public bool IsPlaying
+    {
+        get { return m_GameState == GameState.gamePlay; }
+    }
 
-	void SetScore(int score)
-	{
-		Score = score;
-		EventManager.Instance.Raise(new GameStatisticsChangedEvent() { eBestScore = BestScore,eScore =m_Score,eNLives = m_NBalls,eNEnemiesLeftBeforeVictory = m_NEnemiesLeftBeforeVictory });
-	}
-	#endregion
+    #endregion
 
-	[Header("GameManager")]
+    #region Score
 
-	#region Enemies to be destroyed
-	[Header("Victory condition")]
-	// Victory Condition : a certain number of enemies must be destroyed
-	[SerializeField] private int m_NEnemiesToDestroyForVictory;
-	private int m_NEnemiesLeftBeforeVictory;
-	void DecrementNEnemiesLeftBeforeVictory(int decrement)
-	{
-		SetNEnemiesLeftBeforeVictory(m_NEnemiesLeftBeforeVictory - decrement);
-	}
-	void SetNEnemiesLeftBeforeVictory(int nEnemies)
-	{
-		m_NEnemiesLeftBeforeVictory = nEnemies;
-		EventManager.Instance.Raise(new GameStatisticsChangedEvent() { eBestScore = BestScore, eScore = m_Score, eNLives = m_NBalls, eNEnemiesLeftBeforeVictory = m_NEnemiesLeftBeforeVictory });
-	}
-	#endregion
+    private int m_Score;
 
-	#region Balls
-	[Header("Ball")]
-	[SerializeField] private GameObject m_BallPrefab;
-	[SerializeField] private Transform m_BallSpawnPoint;
-	Ball m_CurrentBall;
+    public int Score
+    {
+        get { return m_Score; }
+        set
+        {
+            m_Score = value;
+            BestScore = Mathf.Max(BestScore, value);
+        }
+    }
 
-	private int m_NBalls;
-	public int NBalls { get { return m_NBalls; } }
+    public int BestScore
+    {
+        get { return PlayerPrefs.GetInt("BEST_SCORE", 0); }
+        set { PlayerPrefs.SetInt("BEST_SCORE", value); }
+    }
 
-	void IncrementNBalls(int increment)
-	{
-		SetNBalls(m_NBalls + increment);
-	}
+    void IncrementScore(int increment)
+    {
+        SetScore(m_Score + increment);
+    }
 
-	void DecrementNBalls(int decrement)
-	{
-		SetNBalls(m_NBalls - decrement);
-	}
+    void SetScore(int score)
+    {
+        Score = score;
+        EventManager.Instance.Raise(new GameStatisticsChangedEvent()
+        {
+            eBestScore = BestScore, eScore = m_Score, eNLives = m_NBalls,
+            eNEnemiesLeftBeforeVictory = m_NEnemiesLeftBeforeVictory
+        });
+    }
 
-	void SetNBalls(int nLives)
-	{
-		m_NBalls = nLives;
-		EventManager.Instance.Raise(new GameStatisticsChangedEvent() { eBestScore = BestScore, eScore = m_Score, eNLives = m_NBalls, eNEnemiesLeftBeforeVictory = m_NEnemiesLeftBeforeVictory });
-	}
-	#endregion
+    #endregion
 
-	#region Events' subscription
-	public override void SubscribeEvents()
-	{
-		base.SubscribeEvents();
+    [Header("GameManager")]
 
-		//MainMenuManager
-		EventManager.Instance.AddListener<MainMenuButtonClickedEvent>(MainMenuButtonClicked);
-		EventManager.Instance.AddListener<PlayButtonClickedEvent>(PlayButtonClicked);
-		EventManager.Instance.AddListener<NextLevelButtonClickedEvent>(NextLevelButtonClicked);
-		EventManager.Instance.AddListener<ResumeButtonClickedEvent>(ResumeButtonClicked);
-		EventManager.Instance.AddListener<EscapeButtonClickedEvent>(EscapeButtonClicked);
+    #region Enemies to be destroyed
 
-		//Enemy
-		EventManager.Instance.AddListener<EnemyHasBeenDestroyedEvent>(EnemyHasBeenDestroyed);
+    [Header("Victory condition")]
+    // Victory Condition : a certain number of enemies must be destroyed
+    [SerializeField]
+    private int m_NEnemiesToDestroyForVictory;
 
-		//Score Item
-		EventManager.Instance.AddListener<ScoreItemEvent>(ScoreHasBeenGained);
+    private int m_NEnemiesLeftBeforeVictory;
 
-		//Level
-		EventManager.Instance.AddListener<LevelHasBeenInstantiatedEvent>(LevelHasBeenInstantiated);
-		EventManager.Instance.AddListener<AllMovingItemsAreStillEvent>(LevelBecameStillAfterBallDestruction);
-		EventManager.Instance.AddListener<AllEnemiesOfLevelHaveBeenDestroyedEvent>(AllEnemiesOfLevelHaveBeenDestroyed);
+    void DecrementNEnemiesLeftBeforeVictory(int decrement)
+    {
+        SetNEnemiesLeftBeforeVictory(m_NEnemiesLeftBeforeVictory - decrement);
+    }
 
-		//Ball
-		EventManager.Instance.AddListener<BallHasBeenThrownEvent>(BallHasBeenThrown);
-	}
+    void SetNEnemiesLeftBeforeVictory(int nEnemies)
+    {
+        m_NEnemiesLeftBeforeVictory = nEnemies;
+        EventManager.Instance.Raise(new GameStatisticsChangedEvent()
+        {
+            eBestScore = BestScore, eScore = m_Score, eNLives = m_NBalls,
+            eNEnemiesLeftBeforeVictory = m_NEnemiesLeftBeforeVictory
+        });
+    }
 
-	public override void UnsubscribeEvents()
-	{
-		base.UnsubscribeEvents();
+    #endregion
 
-		//MainMenuManager
-		EventManager.Instance.RemoveListener<MainMenuButtonClickedEvent>(MainMenuButtonClicked);
-		EventManager.Instance.RemoveListener<PlayButtonClickedEvent>(PlayButtonClicked);
-		EventManager.Instance.RemoveListener<NextLevelButtonClickedEvent>(NextLevelButtonClicked);
-		EventManager.Instance.RemoveListener<ResumeButtonClickedEvent>(ResumeButtonClicked);
-		EventManager.Instance.RemoveListener<EscapeButtonClickedEvent>(EscapeButtonClicked);
+    #region Balls
 
-		//Enemy
-		EventManager.Instance.RemoveListener<EnemyHasBeenDestroyedEvent>(EnemyHasBeenDestroyed);
+    [Header("Ball")] [SerializeField] private GameObject m_BallPrefab;
+    [SerializeField] private GameObject m_BallPrefabBrian;
+    [SerializeField] private GameObject m_BallPrefabAnto;
+    [SerializeField] private GameObject m_BallPrefabJojo;
+    [SerializeField] private GameObject m_BallPrefabSarah;
+    [SerializeField] private Transform m_BallSpawnPoint;
+    Ball m_CurrentBall;
 
-		//Score Item
-		EventManager.Instance.RemoveListener<ScoreItemEvent>(ScoreHasBeenGained);
-		
-		//Level
-		EventManager.Instance.RemoveListener<LevelHasBeenInstantiatedEvent>(LevelHasBeenInstantiated);
-		EventManager.Instance.RemoveListener<AllMovingItemsAreStillEvent>(LevelBecameStillAfterBallDestruction);
-		EventManager.Instance.RemoveListener<AllEnemiesOfLevelHaveBeenDestroyedEvent>(AllEnemiesOfLevelHaveBeenDestroyed);
+    private int m_NBalls;
 
-		//Ball
-		EventManager.Instance.RemoveListener<BallHasBeenThrownEvent>(BallHasBeenThrown);
-	}
-	#endregion
+    public int NBalls
+    {
+        get { return m_NBalls; }
+    }
 
-	#region Manager implementation
-	protected override IEnumerator InitCoroutine()
-	{
-		Menu();
-		EventManager.Instance.Raise(new GameStatisticsChangedEvent() { eBestScore = BestScore, eScore = 0, eNLives = 0, eNEnemiesLeftBeforeVictory = 0});
-		yield break;
-	}
-	#endregion
+    void IncrementNBalls(int increment)
+    {
+        SetNBalls(m_NBalls + increment);
+    }
 
-	#region Game flow & Gameplay
-	//Game initialization
-	void InitNewGame()
-	{
-		SetScore(0);
-		SetNBalls(0);
-		SetNEnemiesLeftBeforeVictory(m_NEnemiesToDestroyForVictory);
+    void DecrementNBalls(int decrement)
+    {
+        SetNBalls(m_NBalls - decrement);
+    }
 
-		m_GameState = GameState.gameNextLevel; // le game state sera set à play après que le level est instantié
-		EventManager.Instance.Raise(new GoToNextLevelEvent());
-	}
+    void SetNBalls(int nLives)
+    {
+        m_NBalls = nLives;
+        EventManager.Instance.Raise(new GameStatisticsChangedEvent()
+        {
+            eBestScore = BestScore, eScore = m_Score, eNLives = m_NBalls,
+            eNEnemiesLeftBeforeVictory = m_NEnemiesLeftBeforeVictory
+        });
+    }
 
-	//Ball
-	void DestroyCurrentBall()
-	{
-		if(m_CurrentBall)
-			m_CurrentBall.DestroyAndDoNotRaiseEvent();
-	}
+    #endregion
 
-	void SpawnBall()
-	{
-		DestroyCurrentBall();
-		m_CurrentBall = Instantiate(m_BallPrefab, m_BallSpawnPoint.position, Quaternion.identity).GetComponent<Ball>();
-		EventManager.Instance.Raise(new BallHasBeenInstantiatedEvent());
-	}
-	#endregion
+    #region Events' subscription
 
-	#region Callbacks to events issued by LevelManager
-	private void LevelHasBeenInstantiated(LevelHasBeenInstantiatedEvent e)
-	{
-		DestroyCurrentBall();
-		IncrementNBalls(e.eLevel.NBalls);
-		SpawnBall();
+    public override void SubscribeEvents()
+    {
+        base.SubscribeEvents();
 
-		SetTimeScale(1);
-		m_GameState = GameState.gamePlay;
-	}
-	#endregion
+        //MainMenuManager
+        EventManager.Instance.AddListener<MainMenuButtonClickedEvent>(MainMenuButtonClicked);
+        EventManager.Instance.AddListener<PlayButtonClickedEvent>(PlayButtonClicked);
+        EventManager.Instance.AddListener<NextLevelButtonClickedEvent>(NextLevelButtonClicked);
+        EventManager.Instance.AddListener<ResumeButtonClickedEvent>(ResumeButtonClicked);
+        EventManager.Instance.AddListener<EscapeButtonClickedEvent>(EscapeButtonClicked);
 
-	#region Callbacks to events issued by Score items
-	private void ScoreHasBeenGained(ScoreItemEvent e)
-	{
-		IncrementScore(e.eScore.Score);
-	}
-	#endregion
+        //Enemy
+        EventManager.Instance.AddListener<EnemyHasBeenDestroyedEvent>(EnemyHasBeenDestroyed);
 
-	#region Callbacks to events issued by Enemy
-	private void EnemyHasBeenDestroyed(EnemyHasBeenDestroyedEvent e)
-	{
-		DecrementNEnemiesLeftBeforeVictory(1);
+        //Score Item
+        EventManager.Instance.AddListener<ScoreItemEvent>(ScoreHasBeenGained);
 
-		if (m_NEnemiesLeftBeforeVictory == 0)
-		{
-			DestroyCurrentBall();
-			Victory();
-		}
-	}
-	#endregion
+        //Level
+        EventManager.Instance.AddListener<LevelHasBeenInstantiatedEvent>(LevelHasBeenInstantiated);
+        EventManager.Instance.AddListener<AllMovingItemsAreStillEvent>(LevelBecameStillAfterBallDestruction);
+        EventManager.Instance.AddListener<AllEnemiesOfLevelHaveBeenDestroyedEvent>(AllEnemiesOfLevelHaveBeenDestroyed);
 
-	#region Callbacks to events issued by Ball
-	void BallHasBeenThrown(BallHasBeenThrownEvent e)
-	{
-		DecrementNBalls(1);
-	}
-	#endregion
-	
-	#region Callbacks to events issued by Level
-	void LevelBecameStillAfterBallDestruction(AllMovingItemsAreStillEvent e)
-	{
-		if (!IsPlaying) return;
+        //Ball
+        EventManager.Instance.AddListener<BallHasBeenThrownEvent>(BallHasBeenThrown);
+    }
 
-		DestroyCurrentBall();
+    public override void UnsubscribeEvents()
+    {
+        base.UnsubscribeEvents();
 
-		if (NBalls > 0)
-			SpawnBall();
-		else // gameOver
-			Over();
-	}
+        //MainMenuManager
+        EventManager.Instance.RemoveListener<MainMenuButtonClickedEvent>(MainMenuButtonClicked);
+        EventManager.Instance.RemoveListener<PlayButtonClickedEvent>(PlayButtonClicked);
+        EventManager.Instance.RemoveListener<NextLevelButtonClickedEvent>(NextLevelButtonClicked);
+        EventManager.Instance.RemoveListener<ResumeButtonClickedEvent>(ResumeButtonClicked);
+        EventManager.Instance.RemoveListener<EscapeButtonClickedEvent>(EscapeButtonClicked);
 
-	private void AllEnemiesOfLevelHaveBeenDestroyed(AllEnemiesOfLevelHaveBeenDestroyedEvent e)
-	{
-		Debug.Log("ALL ENEMIES OF THE LEVEL HAVE BEEN DESTROYED");
-		if (IsPlaying)
-		{
-			DestroyCurrentBall();
-			m_GameState = GameState.gameNextLevel;
-			SetTimeScale(0);
-			EventManager.Instance.Raise(new AskToGoToNextLevelEvent());
-		}
-	}
-	#endregion
+        //Enemy
+        EventManager.Instance.RemoveListener<EnemyHasBeenDestroyedEvent>(EnemyHasBeenDestroyed);
 
-	#region Callbacks to Events issued by MenuManager
-	private void MainMenuButtonClicked(MainMenuButtonClickedEvent e)
-	{
-		Menu();
-	}
+        //Score Item
+        EventManager.Instance.RemoveListener<ScoreItemEvent>(ScoreHasBeenGained);
 
-	private void PlayButtonClicked(PlayButtonClickedEvent e)
-	{
-		Play();
-	}
+        //Level
+        EventManager.Instance.RemoveListener<LevelHasBeenInstantiatedEvent>(LevelHasBeenInstantiated);
+        EventManager.Instance.RemoveListener<AllMovingItemsAreStillEvent>(LevelBecameStillAfterBallDestruction);
+        EventManager.Instance.RemoveListener<AllEnemiesOfLevelHaveBeenDestroyedEvent>(
+            AllEnemiesOfLevelHaveBeenDestroyed);
 
-	private void NextLevelButtonClicked(NextLevelButtonClickedEvent e)
-	{
-		EventManager.Instance.Raise(new GoToNextLevelEvent());
-	}
+        //Ball
+        EventManager.Instance.RemoveListener<BallHasBeenThrownEvent>(BallHasBeenThrown);
+    }
 
-	private void ResumeButtonClicked(ResumeButtonClickedEvent e)
-	{
-		Resume();
-	}
+    #endregion
 
-	private void EscapeButtonClicked(EscapeButtonClickedEvent e)
-	{
-		if(IsPlaying)
-			Pause();
-	}
-	#endregion
+    #region Manager implementation
 
-	#region GameState methods
-	private void Menu()
-	{
-		DestroyCurrentBall();
-		SetTimeScale(0);
-		m_GameState = GameState.gameMenu;
-		MusicLoopsManager.Instance.PlayMusic(Constants.MENU_MUSIC);
-		EventManager.Instance.Raise(new GameMenuEvent());
-	}
+    protected override IEnumerator InitCoroutine()
+    {
+        Menu();
+        EventManager.Instance.Raise(new GameStatisticsChangedEvent()
+            { eBestScore = BestScore, eScore = 0, eNLives = 0, eNEnemiesLeftBeforeVictory = 0 });
+        yield break;
+    }
 
-	private void Play()
-	{
-		m_GameState = GameState.gamePlay;
-		MusicLoopsManager.Instance.PlayMusic(Constants.GAMEPLAY_MUSIC);
-		EventManager.Instance.Raise(new GamePlayEvent());
-		InitNewGame();
-	}
+    #endregion
 
-	private void Pause()
-	{
-		SetTimeScale(0);
-		m_GameState = GameState.gamePause;
-		EventManager.Instance.Raise(new GamePauseEvent());
-	}
+    #region Game flow & Gameplay
 
-	private void Resume()
-	{
-		SetTimeScale(1);
-		m_GameState = GameState.gamePlay;
-		EventManager.Instance.Raise(new GameResumeEvent());
-	}
+    //Game initialization
+    void InitNewGame()
+    {
+        SetScore(0);
+        SetNBalls(0);
+        SetNEnemiesLeftBeforeVictory(m_NEnemiesToDestroyForVictory);
 
-	private void Over()
-	{
-		DestroyCurrentBall();
-		SetTimeScale(0);
-		m_GameState = GameState.gameOver;
-		SfxManager.Instance.PlaySfx(Constants.GAMEOVER_SFX);
-		EventManager.Instance.Raise(new GameOverEvent());
-	}
+        m_GameState = GameState.gameNextLevel; // le game state sera set à play après que le level est instantié
+        EventManager.Instance.Raise(new GoToNextLevelEvent());
+    }
 
-	private void Victory()
-	{
-		DestroyCurrentBall();
-		SetTimeScale(0);
-		m_GameState = GameState.gameVictory;
-		SfxManager.Instance.PlaySfx(Constants.VICTORY_SFX);
-		EventManager.Instance.Raise(new GameVictoryEvent());
-	}
-	#endregion
+    //Ball
+    void DestroyCurrentBall()
+    {
+        if (m_CurrentBall)
+            m_CurrentBall.DestroyAndDoNotRaiseEvent();
+    }
+
+    void SpawnBall()
+    {
+        DestroyCurrentBall();
+        GameObject[] allBalls = new GameObject[]
+        {
+            m_BallPrefabAnto,
+            m_BallPrefabJojo,
+            m_BallPrefabSarah,
+            m_BallPrefabBrian,
+        };
+        GameObject random = allBalls[Random.Range(0, allBalls.Length)];
+        m_CurrentBall = Instantiate(random, m_BallSpawnPoint.position, Quaternion.identity).GetComponent<Ball>();
+        EventManager.Instance.Raise(new BallHasBeenInstantiatedEvent());
+    }
+
+    #endregion
+
+    #region Callbacks to events issued by LevelManager
+
+    private void LevelHasBeenInstantiated(LevelHasBeenInstantiatedEvent e)
+    {
+        DestroyCurrentBall();
+        IncrementNBalls(e.eLevel.NBalls);
+        SpawnBall();
+
+        SetTimeScale(1);
+        m_GameState = GameState.gamePlay;
+    }
+
+    #endregion
+
+    #region Callbacks to events issued by Score items
+
+    private void ScoreHasBeenGained(ScoreItemEvent e)
+    {
+        IncrementScore(e.eScore.Score);
+    }
+
+    #endregion
+
+    #region Callbacks to events issued by Enemy
+
+    private void EnemyHasBeenDestroyed(EnemyHasBeenDestroyedEvent e)
+    {
+        DecrementNEnemiesLeftBeforeVictory(1);
+
+        if (m_NEnemiesLeftBeforeVictory == 0)
+        {
+            DestroyCurrentBall();
+            Victory();
+        }
+    }
+
+    #endregion
+
+    #region Callbacks to events issued by Ball
+
+    void BallHasBeenThrown(BallHasBeenThrownEvent e)
+    {
+        DecrementNBalls(1);
+    }
+
+    #endregion
+
+    #region Callbacks to events issued by Level
+
+    void LevelBecameStillAfterBallDestruction(AllMovingItemsAreStillEvent e)
+    {
+        if (!IsPlaying) return;
+
+        DestroyCurrentBall();
+
+        if (NBalls > 0)
+            SpawnBall();
+        else // gameOver
+            Over();
+    }
+
+    private void AllEnemiesOfLevelHaveBeenDestroyed(AllEnemiesOfLevelHaveBeenDestroyedEvent e)
+    {
+        Debug.Log("ALL ENEMIES OF THE LEVEL HAVE BEEN DESTROYED");
+        if (IsPlaying)
+        {
+            DestroyCurrentBall();
+            m_GameState = GameState.gameNextLevel;
+            SetTimeScale(0);
+            EventManager.Instance.Raise(new AskToGoToNextLevelEvent());
+        }
+    }
+
+    #endregion
+
+    #region Callbacks to Events issued by MenuManager
+
+    private void MainMenuButtonClicked(MainMenuButtonClickedEvent e)
+    {
+        Menu();
+    }
+
+    private void PlayButtonClicked(PlayButtonClickedEvent e)
+    {
+        Play();
+    }
+
+    private void NextLevelButtonClicked(NextLevelButtonClickedEvent e)
+    {
+        EventManager.Instance.Raise(new GoToNextLevelEvent());
+    }
+
+    private void ResumeButtonClicked(ResumeButtonClickedEvent e)
+    {
+        Resume();
+    }
+
+    private void EscapeButtonClicked(EscapeButtonClickedEvent e)
+    {
+        if (IsPlaying)
+            Pause();
+    }
+
+    #endregion
+
+    #region GameState methods
+
+    private void Menu()
+    {
+        DestroyCurrentBall();
+        SetTimeScale(0);
+        m_GameState = GameState.gameMenu;
+        MusicLoopsManager.Instance.PlayMusic(Constants.MENU_MUSIC);
+        EventManager.Instance.Raise(new GameMenuEvent());
+    }
+
+    private void Play()
+    {
+        m_GameState = GameState.gamePlay;
+        MusicLoopsManager.Instance.PlayMusic(Constants.GAMEPLAY_MUSIC);
+        EventManager.Instance.Raise(new GamePlayEvent());
+        InitNewGame();
+    }
+
+    private void Pause()
+    {
+        SetTimeScale(0);
+        m_GameState = GameState.gamePause;
+        EventManager.Instance.Raise(new GamePauseEvent());
+    }
+
+    private void Resume()
+    {
+        SetTimeScale(1);
+        m_GameState = GameState.gamePlay;
+        EventManager.Instance.Raise(new GameResumeEvent());
+    }
+
+    private void Over()
+    {
+        DestroyCurrentBall();
+        SetTimeScale(0);
+        m_GameState = GameState.gameOver;
+        SfxManager.Instance.PlaySfx(Constants.GAMEOVER_SFX);
+        EventManager.Instance.Raise(new GameOverEvent());
+    }
+
+    private void Victory()
+    {
+        DestroyCurrentBall();
+        SetTimeScale(0);
+        m_GameState = GameState.gameVictory;
+        SfxManager.Instance.PlaySfx(Constants.VICTORY_SFX);
+        EventManager.Instance.Raise(new GameVictoryEvent());
+    }
+
+    #endregion
 }

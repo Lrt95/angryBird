@@ -114,6 +114,8 @@ public class Ball : MonoBehaviour {
 
 		if (!m_IsFlying && m_BallLocked && Input.GetMouseButtonUp(0))
 		{
+			SfxManager.Instance.PlaySfx(Constants.LAUNCHBALL_SFX);
+
 			float extension;
 			float angle;
 			GetCatapultExtensionAndAngle(Input.mousePosition, out extension, out angle);
@@ -145,6 +147,7 @@ public class Ball : MonoBehaviour {
 
 	private void OnCollisionEnter(Collision collision)
 	{
+
 		if(GameManager.Instance.IsPlaying)
 			WaitDestroyAndRaiseEvent( m_LifeDurationWhenHit);
 	}

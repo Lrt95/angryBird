@@ -52,7 +52,7 @@ public class SfxManager : Singleton<SfxManager> {
 		XmlDocument xmlDoc = new XmlDocument();
 		xmlDoc.LoadXml(m_SfxXmlSetup.text);
 
-		foreach(XmlNode node in xmlDoc.GetElementsByTagName("SFX"))
+		foreach (XmlNode node in xmlDoc.GetElementsByTagName("SFX"))
 		{
 			if(node.NodeType!= XmlNodeType.Comment)
 

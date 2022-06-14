@@ -36,10 +36,13 @@ public class Beam : MonoBehaviour, IScore
 			&& !m_AlreadyHit
 			&& collision.gameObject.CompareTag("Ball"))
 		{
+
 			float deltaTime = Time.deltaTime;
 			Vector3 totalForce =  deltaTime==0?Vector3.zero:collision.impulse / deltaTime;
 			if (totalForce.magnitude > m_DestructionForce)
 			{
+				SfxManager.Instance.PlaySfx(Constants.DESTRUCTION_WALL_SFX);
+
 				Debug.Log(name + " Collision with " + collision.gameObject.name + "   force = " + totalForce);
 				m_AlreadyHit = true;
 				Destroy(gameObject);

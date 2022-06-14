@@ -2,150 +2,164 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 using SDD.Events;
 
-public class Ball : MonoBehaviour {
+public class Ball : MonoBehaviour
+{
+    Transform m_Transform;
+    Rigidbody m_Rigidbody;
 
-	Transform m_Transform;
-	Rigidbody m_Rigidbody;
+    [Header("Catapult")] [SerializeField] float m_CatapultRadius;
+    [SerializeField] float m_CatapultMinAngle;
+    [SerializeField] float m_CatapultMaxAngle;
 
-	[Header("Catapult")]
-	[SerializeField] float m_CatapultRadius;
-	[SerializeField] float m_CatapultMinAngle;
-	[SerializeField] float m_CatapultMaxAngle;
+    [Header("Arrow")] [SerializeField] Transform m_Arrow;
+    [SerializeField] Transform m_ResizableArrow;
+    [SerializeField] float m_MinArrowExtension;
+    [SerializeField] float m_MaxArrowExtension;
 
-	[Header("Arrow")]
-	[SerializeField] Transform m_Arrow;
-	[SerializeField] Transform m_ResizableArrow;
-	[SerializeField] float m_MinArrowExtension;
-	[SerializeField] float m_MaxArrowExtension;
-					 
-	[Header("Gfx")]
-	[SerializeField] MeshRenderer m_MeshRenderer;
-	[SerializeField] Material m_UnlockedMaterial;
-	[SerializeField] Material m_LockedMaterial;
+    [Header("Gfx")] [SerializeField] MeshRenderer m_MeshRenderer;
+    [SerializeField] Material m_UnlockedMaterial;
+    [SerializeField] Material m_LockedMaterial;
 
-	[Header("Life Duration")]
-	[SerializeField] float m_LifeDurationWhenFlying;
-	[SerializeField] float m_LifeDurationWhenHit;
+    [Header("Life Duration")] [SerializeField]
+    float m_LifeDurationWhenFlying;
 
-	bool m_BallLocked = false;
-	bool m_IsFlying = false;
+    [SerializeField] float m_LifeDurationWhenHit;
 
-	float minImpulsionForce { get { return LevelsManager.Instance?LevelsManager.Instance.CurrentLevelBallMinImpulsionForce:0; } }
-	float maxImpulsionForce { get { return LevelsManager.Instance ? LevelsManager.Instance.CurrentLevelBallMaxImpulsionForce:0; } }
+    bool m_BallLocked = false;
+    bool m_IsFlying = false;
 
-	private void Awake()
-	{
-		m_Transform = GetComponent<Transform>();
-		m_Rigidbody = GetComponent<Rigidbody>();
+    float minImpulsionForce
+    {
+        get { return LevelsManager.Instance ? LevelsManager.Instance.CurrentLevelBallMinImpulsionForce : 0; }
+    }
 
-		if (!m_MeshRenderer)
-			m_MeshRenderer = GetComponentInChildren<MeshRenderer>();
-	}
-	// Use this for initialization
-	void Start () {
-		m_BallLocked = false;
-		m_IsFlying = false;
-	}
+    float maxImpulsionForce
+    {
+        get { return LevelsManager.Instance ? LevelsManager.Instance.CurrentLevelBallMaxImpulsionForce : 0; }
+    }
 
-	public void DestroyAndDoNotRaiseEvent()
-	{
-		StopAllCoroutines();
-		Destroy(gameObject);
-	}
+    private void Awake()
+    {
+        m_Transform = GetComponent<Transform>();
+        m_Rigidbody = GetComponent<Rigidbody>();
 
-	IEnumerator WaitDestroyAndRaiseEventCoroutine(float waitDurationUntilDestruction)
-	{
-		yield return new WaitForSeconds(waitDurationUntilDestruction);
-		if (GameManager.Instance.IsPlaying)
-			EventManager.Instance.Raise(new BallHasBeenDestroyedEvent());
-		StopAllCoroutines();
-		Destroy(gameObject);
-		yield break;
-	}
+        if (!m_MeshRenderer)
+            m_MeshRenderer = GetComponentInChildren<MeshRenderer>();
+    }
 
-	void WaitDestroyAndRaiseEvent(float waitDurationUntilDestruction)
-	{
-		StartCoroutine(WaitDestroyAndRaiseEventCoroutine(waitDurationUntilDestruction));
-	}
+// Use this for initialization
+    void Start()
+    {
+        m_BallLocked = false;
+        m_IsFlying = false;
+    }
 
-	void GetCatapultExtensionAndAngle(Vector2 mousePos,out float extension,out float angle)
-	{
-		//extension
-		Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, -Camera.main.transform.position.z));
-		Vector3 vect = mouseWorldPos - m_Transform.position;
-		extension = Mathf.Clamp(vect.magnitude, 0, m_CatapultRadius);
+    public void DestroyAndDoNotRaiseEvent()
+    {
+        StopAllCoroutines();
+        Destroy(gameObject);
+    }
 
-		//angle
-		angle = (Mathf.Atan2(-vect.y, -vect.x)) * Mathf.Rad2Deg + 180f; // entre 0 et 2*pi
-		angle = Mathf.Clamp(angle, m_CatapultMinAngle, m_CatapultMaxAngle);
-	}
+    IEnumerator WaitDestroyAndRaiseEventCoroutine(float waitDurationUntilDestruction)
+    {
+        yield return new WaitForSeconds(waitDurationUntilDestruction);
+        if (GameManager.Instance.IsPlaying)
+            EventManager.Instance.Raise(new BallHasBeenDestroyedEvent());
+        StopAllCoroutines();
+        Destroy(gameObject);
+        yield break;
+    }
 
-	private void Update()
-	{
-		if (!GameManager.Instance.IsPlaying) return;
+    void WaitDestroyAndRaiseEvent(float waitDurationUntilDestruction)
+    {
+        StartCoroutine(WaitDestroyAndRaiseEventCoroutine(waitDurationUntilDestruction));
+    }
 
-		m_MeshRenderer.material =  m_BallLocked ? m_LockedMaterial : m_UnlockedMaterial;
-		m_Arrow.gameObject.SetActive(m_BallLocked && !m_IsFlying);
+    void GetCatapultExtensionAndAngle(Vector2 mousePos, out float extension, out float angle)
+    {
+//extension
+        Vector3 mouseWorldPos =
+            Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, -Camera.main.transform.position.z));
+        Debug.DrawLine(m_Transform.position, mouseWorldPos, Color.red);
+        Vector3 vect = mouseWorldPos - m_Transform.position;
+        extension = Mathf.Clamp(vect.magnitude, 0, m_CatapultRadius);
 
-		//arrow size & orientation
-		float extension;
-		float angle;
-		GetCatapultExtensionAndAngle(Input.mousePosition, out extension, out angle);
+//angle
+        angle = (Mathf.Atan2(vect.y, vect.x)) * Mathf.Rad2Deg; //
+        angle = Mathf.Clamp(angle, m_CatapultMinAngle, m_CatapultMaxAngle);
+    }
 
-		SetArrowSize(Mathf.Lerp(m_MinArrowExtension, m_MaxArrowExtension, extension / m_CatapultRadius));
-		SetArrowOrientation(angle+180f);
-	}
+    private void Update()
+    {
+        if (!GameManager.Instance.IsPlaying) return;
 
-	void SetArrowOrientation(float angle)
-	{
-		m_Arrow.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
-	}
+        m_MeshRenderer.material = m_BallLocked ? m_LockedMaterial : m_UnlockedMaterial;
+        m_Arrow.gameObject.SetActive(m_BallLocked && !m_IsFlying);
 
-	void SetArrowSize(float size)
-	{
-		m_ResizableArrow.localScale = Vector3.up+Vector3.forward+ Vector3.right * size;
-	}
+//arrow size & orientation
+        float extension;
+        float angle;
+        GetCatapultExtensionAndAngle(Input.mousePosition, out extension, out angle);
 
-	// Update is called once per frame
-	void LateUpdate () {
-		if (!GameManager.Instance.IsPlaying) return;
+        SetArrowSize(Mathf.Lerp(m_MinArrowExtension, m_MaxArrowExtension, extension / m_CatapultRadius));
+        SetArrowOrientation(angle);
+    }
 
-		if (!m_IsFlying && m_BallLocked && Input.GetMouseButtonUp(0))
-		{
-			float extension;
-			float angle;
-			GetCatapultExtensionAndAngle(Input.mousePosition, out extension, out angle);
-			m_IsFlying = true;
+    void SetArrowOrientation(float angle)
+    {
+        m_Arrow.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+    }
 
-			m_Rigidbody.useGravity = true;
-			m_Rigidbody.isKinematic = false;
+    void SetArrowSize(float size)
+    {
+        m_ResizableArrow.localScale = Vector3.up + Vector3.forward + Vector3.right * size;
+    }
 
-			m_Rigidbody.AddForce(m_Arrow.right * Mathf.Lerp(minImpulsionForce, maxImpulsionForce, extension / m_CatapultRadius), ForceMode.Impulse);
-			WaitDestroyAndRaiseEvent(m_LifeDurationWhenFlying);
+// Update is called once per frame
+    void LateUpdate()
+    {
+        if (!GameManager.Instance.IsPlaying) return;
 
-			EventManager.Instance.Raise(new BallHasBeenThrownEvent());
-		}
-	}
+        if (!m_IsFlying && m_BallLocked && Input.GetMouseButtonUp(0))
+        {
+            float extension;
+            float angle;
+            GetCatapultExtensionAndAngle(Input.mousePosition, out extension, out angle);
+            m_IsFlying = true;
 
-	private void OnMouseOver()
-	{
-		if (!GameManager.Instance.IsPlaying) return;
+            m_Rigidbody.useGravity = true;
+            m_Rigidbody.isKinematic = false;
 
-		if (!m_IsFlying && !m_BallLocked && Input.GetMouseButtonDown(0))
-		{
-			m_BallLocked = true;
-		}
-		if (!m_IsFlying && m_BallLocked && Input.GetMouseButtonUp(0))
-		{
-			m_BallLocked = false;
-		}
-	}
+            m_Rigidbody.AddForce(
+                m_Arrow.right * Mathf.Lerp(minImpulsionForce, maxImpulsionForce, extension / m_CatapultRadius),
+                ForceMode.Impulse);
+            WaitDestroyAndRaiseEvent(m_LifeDurationWhenFlying);
 
-	private void OnCollisionEnter(Collision collision)
-	{
-		if(GameManager.Instance.IsPlaying)
-			WaitDestroyAndRaiseEvent( m_LifeDurationWhenHit);
-	}
+            EventManager.Instance.Raise(new BallHasBeenThrownEvent());
+        }
+    }
+
+    private void OnMouseOver()
+    {
+        if (!GameManager.Instance.IsPlaying) return;
+
+        if (!m_IsFlying && !m_BallLocked && Input.GetMouseButtonDown(0))
+        {
+            m_BallLocked = true;
+        }
+
+        if (!m_IsFlying && m_BallLocked && Input.GetMouseButtonUp(0))
+        {
+            m_BallLocked = false;
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (GameManager.Instance.IsPlaying)
+            WaitDestroyAndRaiseEvent(m_LifeDurationWhenHit);
+    }
 }

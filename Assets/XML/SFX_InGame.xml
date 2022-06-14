@@ -1,4 +1,10 @@
 <SFX_SETUP>
+	<SFX name="LaunchBall" volume="1" />
+	<SFX name="DefeatCry" volume="2" />
+	<SFX name="VictoryCry" volume="2" />
+	<SFX name="NewBall" volume="1" />
+	<SFX name="DestructionWall" volume="1" />
+	<SFX name="BallDestroyed" volume="1" />
 	<SFX name="Button" volume="1" />
 	<SFX name="Selection" volume="1" /> 
 	<SFX name="LetsGo" volume="1" />

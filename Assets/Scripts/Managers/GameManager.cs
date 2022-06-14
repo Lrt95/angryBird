@@ -243,6 +243,7 @@ public class GameManager : Manager<GameManager>
         GameObject random = allBalls[Random.Range(0, allBalls.Length)];
         m_CurrentBall = Instantiate(random, m_BallSpawnPoint.position, Quaternion.identity).GetComponent<Ball>();
         EventManager.Instance.Raise(new BallHasBeenInstantiatedEvent());
+    	SfxManager.Instance.PlaySfx(Constants.NEW_BALL_SFX);
     }
 
     #endregion
@@ -275,6 +276,7 @@ public class GameManager : Manager<GameManager>
     private void EnemyHasBeenDestroyed(EnemyHasBeenDestroyedEvent e)
     {
         DecrementNEnemiesLeftBeforeVictory(1);
+        SfxManager.Instance.PlaySfx(Constants.BALL_DESTROYED_SFX);
 
         if (m_NEnemiesLeftBeforeVictory == 0)
         {
@@ -310,6 +312,7 @@ public class GameManager : Manager<GameManager>
 
     private void AllEnemiesOfLevelHaveBeenDestroyed(AllEnemiesOfLevelHaveBeenDestroyedEvent e)
     {
+        SfxManager.Instance.PlaySfx(Constants.VICTORY_CRY_SFX);
         Debug.Log("ALL ENEMIES OF THE LEVEL HAVE BEEN DESTROYED");
         if (IsPlaying)
         {
@@ -390,7 +393,7 @@ public class GameManager : Manager<GameManager>
         DestroyCurrentBall();
         SetTimeScale(0);
         m_GameState = GameState.gameOver;
-        SfxManager.Instance.PlaySfx(Constants.GAMEOVER_SFX);
+        SfxManager.Instance.PlaySfx(Constants.DEFEAT_CRY_SFX);
         EventManager.Instance.Raise(new GameOverEvent());
     }
 
@@ -399,7 +402,6 @@ public class GameManager : Manager<GameManager>
         DestroyCurrentBall();
         SetTimeScale(0);
         m_GameState = GameState.gameVictory;
-        SfxManager.Instance.PlaySfx(Constants.VICTORY_SFX);
         EventManager.Instance.Raise(new GameVictoryEvent());
     }
 

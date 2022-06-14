@@ -123,12 +123,14 @@ public class Ball : MonoBehaviour
     {
         if (!GameManager.Instance.IsPlaying) return;
 
-        if (!m_IsFlying && m_BallLocked && Input.GetMouseButtonUp(0))
-        {
-            float extension;
-            float angle;
-            GetCatapultExtensionAndAngle(Input.mousePosition, out extension, out angle);
-            m_IsFlying = true;
+		if (!m_IsFlying && m_BallLocked && Input.GetMouseButtonUp(0))
+		{
+			SfxManager.Instance.PlaySfx(Constants.LAUNCHBALL_SFX);
+
+			float extension;
+			float angle;
+			GetCatapultExtensionAndAngle(Input.mousePosition, out extension, out angle);
+			m_IsFlying = true;
 
             m_Rigidbody.useGravity = true;
             m_Rigidbody.isKinematic = false;

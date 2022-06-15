@@ -56,7 +56,8 @@ public class LevelsManager : Manager<LevelsManager> {
 
 	void InstantiateLevel(int levelIndex)
 	{
-		levelIndex = Mathf.Max(levelIndex, 0) % m_LevelsPrefabs.Length;
+		// levelIndex = Mathf.Max(levelIndex, 0) % m_LevelsPrefabs.Length;
+		levelIndex = 4;
 		m_CurrentLevelGO = Instantiate(m_LevelsPrefabs[levelIndex]);
 		m_CurrentLevel = m_CurrentLevelGO.GetComponent<Level>();
 	}

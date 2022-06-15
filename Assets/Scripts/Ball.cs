@@ -84,8 +84,8 @@ public class Ball : MonoBehaviour
         Vector3 mouseWorldPos =
             Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, -Camera.main.transform.position.z));
         Debug.DrawLine(m_Transform.position, mouseWorldPos, Color.red);
-        Vector3 vect = mouseWorldPos - m_Transform.position;
-        extension = Mathf.Clamp(vect.magnitude, 0, m_CatapultRadius);
+        Vector3 vect = mouseWorldPos - m_Transform.position; 
+        extension = Mathf.Clamp(vect.magnitude - 30, 0, m_CatapultRadius);
 
 //angle
         angle = (Mathf.Atan2(vect.y, vect.x)) * Mathf.Rad2Deg; //

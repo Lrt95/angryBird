@@ -103,8 +103,8 @@ MonoBehaviour:
   m_MinArrowExtension: 1
   m_MaxArrowExtension: 4
   m_MeshRenderer: {fileID: 23073133616876460}
-  m_UnlockedMaterial: {fileID: 2100000, guid: 0c004ffb201f54fd58395eeb6bc358db, type: 2}
-  m_LockedMaterial: {fileID: 2100000, guid: 0c004ffb201f54fd58395eeb6bc358db, type: 2}
+  m_UnlockedMaterial: {fileID: 2100000, guid: 9b68ae8c554e449c7b0aa98d6478ad7e, type: 2}
+  m_LockedMaterial: {fileID: 2100000, guid: 9b68ae8c554e449c7b0aa98d6478ad7e, type: 2}
   m_LifeDurationWhenFlying: 6
   m_LifeDurationWhenHit: 2
 --- !u!1 &1131281555102166

@@ -97,14 +97,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_CatapultRadius: 4
   m_CatapultMinAngle: -30
-  m_CatapultMaxAngle: 90
+  m_CatapultMaxAngle: 180
   m_Arrow: {fileID: 4586971351011406}
   m_ResizableArrow: {fileID: 4172146731840030}
   m_MinArrowExtension: 1
   m_MaxArrowExtension: 4
   m_MeshRenderer: {fileID: 23073133616876460}
-  m_UnlockedMaterial: {fileID: 2100000, guid: 9579da091f4424db2b965662866bbecb, type: 2}
-  m_LockedMaterial: {fileID: 2100000, guid: 9579da091f4424db2b965662866bbecb, type: 2}
+  m_UnlockedMaterial: {fileID: 2100000, guid: 03f588b7320f54934bc75d0405010b58, type: 2}
+  m_LockedMaterial: {fileID: 2100000, guid: 03f588b7320f54934bc75d0405010b58, type: 2}
   m_LifeDurationWhenFlying: 8
   m_LifeDurationWhenHit: 5
 --- !u!1 &1131281555102166

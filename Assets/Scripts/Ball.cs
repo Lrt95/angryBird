@@ -82,12 +82,12 @@ public class Ball : MonoBehaviour
     {
 //extension
         Vector3 mouseWorldPos =
-            Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, -Camera.main.transform.position.z));
+            Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, -m_Transform.position.z));
         Debug.DrawLine(m_Transform.position, mouseWorldPos, Color.red);
         Vector3 vect = mouseWorldPos - m_Transform.position; 
-        extension = Mathf.Clamp(vect.magnitude - 30, 0, m_CatapultRadius);
-
-//angle
+        extension = Mathf.Clamp(vect.magnitude - 38, 0, m_CatapultRadius);
+        //angle
+        Debug.Log("magnitude " + vect.magnitude);
         angle = (Mathf.Atan2(vect.y, vect.x)) * Mathf.Rad2Deg; //
         angle = Mathf.Clamp(angle, m_CatapultMinAngle, m_CatapultMaxAngle);
     }
